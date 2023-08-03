@@ -1,17 +1,19 @@
-import numpy as np
-
-from gradio_client import Client
-
-import streamlit as st
+import os
+from datetime import datetime
 import cv2
 import librosa
 import librosa.display
-from tensorflow.keras.models import load_model
-import os
-from datetime import datetime
-import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
+import numpy as np
+import streamlit as st
+import streamlit.components.v1 as components
+from gradio_client import Client
 from PIL import Image
+import plotly.graph_objects as go
+from tensorflow.keras.models import load_model
+from wordcloud import WordCloud
+from pysentimiento import create_analyzer
+
 from melspec import plot_colored_polar, plot_melspec
 
 # load models
@@ -19,27 +21,24 @@ model = load_model("model3.h5")
 
 # constants
 starttime = datetime.now()
-client = Client("https://14c5b40f5b6d6294b9.gradio.live/")
-
+client = Client("https://6041351f74f0dabcb0.gradio.live/")
+analyzer = create_analyzer(task="emotion", lang="es")
 
 CAT6 = ['miedo', 'enojo', 'neutral', 'feliz', 'triste', 'sorpresa']
 CAT7 = ['miedo', 'asco', 'neutral', 'feliz', 'triste', 'sorpresa', 'enojo']
 CAT3 = ["positivo", "neutral", "negativo"]
 COLOR_DICT = {"neutral": "grey",
-                  "positivo": "green",
-                  "feliz": "green",
-                  "sorpresa": "orange",
-                  "miedo": "purple",
-                  "negativo": "red",
-                  "enojo": "red",
-                  "triste": "lightblue",
-                  "asco":"brown"}
-
+              "positivo": "green",
+              "feliz": "green",
+              "sorpresa": "orange",
+              "miedo": "purple",
+              "negativo": "red",
+              "enojo": "red",
+              "triste": "lightblue",
+              "asco": "brown"}
 
 TEST_CAT = ['miedo', 'asco', 'neutral', 'feliz', 'triste', 'sorpresa', 'enojo']
 TEST_PRED = np.array([.3, .3, .4, .1, .6, .9, .1])
-
-
 
 hide_streamlit_style = """
 <style>
@@ -47,7 +46,7 @@ hide_streamlit_style = """
 footer {visibility: hidden;}
 </style>
 """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 hide_decoration_bar_style = '''
     <style>
@@ -56,11 +55,25 @@ hide_decoration_bar_style = '''
 '''
 st.markdown(hide_decoration_bar_style, unsafe_allow_html=True)
 
+
 # @st.cache
 def log_file(txt=None):
     with open("log.txt", "a") as f:
         datetoday = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         f.write(f"{txt} - {datetoday};\n")
+
+
+def analyze_emotion(text):
+    # Create the SentimentAnalyzer object
+
+    # Analyze the emotion of the text
+    emotion_result = analyzer.predict_emotion(text)
+
+    # Get the corresponding emoji for the emotion
+    emoji = getEmoji.get(emotion_result, "")
+
+    return emotion_result, emoji
+
 
 # @st.cache
 def save_audio(file):
@@ -86,6 +99,7 @@ def save_audio(file):
         f.write(file.getbuffer())
     return 0
 
+
 # @st.cache
 def get_melspec(audio):
     y, sr = librosa.load(audio, sr=44100)
@@ -98,6 +112,7 @@ def get_melspec(audio):
     rgbImage = np.repeat(grayImage[..., np.newaxis], 3, -1)
     return (rgbImage, Xdb)
 
+
 # @st.cache
 def get_mfccs(audio, limit):
     y, sr = librosa.load(audio)
@@ -109,14 +124,17 @@ def get_mfccs(audio, limit):
         mfccs[:, :a.shape[1]] = a
     return mfccs
 
+
 @st.cache_resource
 def get_title(predictions, categories=CAT6):
     title = f"Emoción Detectada: {categories[predictions.argmax()]} - {predictions.max() * 100:.2f}%"
     return title
 
+
 @st.cache_resource
 def color_dict(coldict=COLOR_DICT):
     return COLOR_DICT
+
 
 @st.cache_resource
 def plot_polar(fig, predictions=TEST_PRED, categories=TEST_CAT, title="TEST", colors=COLOR_DICT):
@@ -152,13 +170,52 @@ def plot_polar(fig, predictions=TEST_PRED, categories=TEST_CAT, title="TEST", co
     plt.ylim(0, 1)
     plt.subplots_adjust(top=0.75)
 
+
+getEmoji = {
+    "happy": "😊",
+    "neutral": "😐",
+    "sad": "😔",
+    "disgust": "🤢",
+    "surprise": "😲",
+    "fear": "😨",
+    "angry": "😡",
+    "positive": "🙂",
+    "neutral": "😐",
+    "negative": "☹️",
+}
+
+
+def plotPie(labels, values):
+    fig = go.Figure(
+        go.Pie(
+            labels=labels,
+            values=[value * 100 for value in values],
+            hoverinfo="label+percent",
+            textinfo="value"
+        ))
+    st.plotly_chart(fig, use_container_width=True)
+
+
+lastSearched = ""
+cacheData = {}
+
+
+def create_word_cloud(text_data):
+    # Create a WordCloud object
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text_data)
+
+    # Display the generated word cloud using Streamlit
+    st.image(wordcloud.to_array(), use_column_width=True)
+
+
 def main():
     side_img = Image.open("images/emotion3.jpg")
     with st.sidebar:
         st.image(side_img, width=300)
     st.sidebar.subheader("Menú")
-    website_menu = st.sidebar.selectbox("Menú", ("Reconocimiento de Emociones", "Descripción del Proyecto", "Nuestro Equipo",
-                                                 "Dejar Comentarios", "Relajarse"))
+    website_menu = st.sidebar.selectbox("Menú",
+                                        ("Reconocimiento de Emociones", "Descripción del Proyecto", "Nuestro Equipo",
+                                         "Dejar Comentarios", "Relajarse"))
     st.set_option('deprecation.showfileUploaderEncoding', False)
 
     if website_menu == "Reconocimiento de Emociones":
@@ -226,6 +283,7 @@ def main():
             em3 = st.sidebar.checkbox("3 emociones", True)
             em6 = st.sidebar.checkbox("6 emociones", True)
             em7 = st.sidebar.checkbox("7 emociones")
+            whisper = st.sidebar.checkbox("Trancripción Whisper")
             gender = st.sidebar.checkbox("género")
 
         elif model_type == "mel-espectrogramas":
@@ -240,8 +298,6 @@ def main():
                 st.sidebar.subheader("Archivo de audio")
                 detalles_archivo = {"Nombre de archivo": audio_file.name, "Tamaño de archivo": audio_file.size}
                 st.sidebar.write(detalles_archivo)
-                
-             
 
             with st.container():
                 col1, col2 = st.columns(2)
@@ -268,10 +324,9 @@ def main():
 
             if model_type == "mfccs":
                 st.markdown("## Predicciones")
-                
-         
+
                 with st.container():
-                    col1, col2, col3, col4 = st.columns(4)
+                    col1, col2, col3, col4, col5 = st.columns(5)
                     mfccs = get_mfccs(path, model.input_shape[-1])
                     mfccs = mfccs.reshape(1, *mfccs.shape)
                     pred = model.predict(mfccs)[0]
@@ -289,38 +344,14 @@ def main():
                                                title=txt, colors=COLORS)
                             st.write(fig)
                     with col2:
-                        
-                        
+
                         if em6:
-                            
                             txt = "MFCCs\n" + get_title(pred, CAT6)
                             fig2 = plt.figure(figsize=(5, 5))
                             COLORS = color_dict(COLOR_DICT)
                             plot_colored_polar(fig2, predictions=pred, categories=CAT6,
                                                title=txt, colors=COLORS)
-                            
-                            result = client.predict(
-                                    "tiny",
-                                    "Spanish",
-                                    "",	
-                                    [f"./audio/{audio_file.name}"],	
-                                    f"./audio/{audio_file.name}",	
-                                    "transcribe",	
-                                    "none",	
-                                    5,	
-                                    5,	
-                                    False,
-                                    False,	
-                                    api_name="/predict"
-                                )
-                                #Split the data_string into filepaths and text_data
-                            print(result[2])
 
-                  
-                            st.write(fig2)
-                            
-                            
-                            
                     with col3:
                         if em7:
                             model_ = load_model("model4.h5")
@@ -333,10 +364,7 @@ def main():
                             plot_colored_polar(fig3, predictions=pred_, categories=CAT7,
                                                title=txt, colors=COLORS)
                             st.write(fig3)
-                            
-                            
-                            
-                            
+
                     with col4:
                         if gender:
                             with st.spinner('Espera un momento...'):
@@ -355,8 +383,42 @@ def main():
                                 plt.imshow(img)
                                 plt.axis("off")
                                 st.write(fig4)
-                    
-                    
+
+                    with col5:
+                        if whisper:
+                            with st.spinner('Procesando Trasncripción'):
+                                result = client.predict(
+                                    "tiny",
+                                    "Spanish",
+                                    "",
+                                    [f"./audio/{audio_file.name}"],
+                                    "",
+                                    "transcribe",
+                                    "none",
+                                    5,
+                                    5,
+                                    False,
+                                    False,
+                                    api_name="/predict"
+                                )
+                                # Split the data_string into filepaths and text_data
+                                text_data = result[2]
+
+                                # Show the word cloud
+                                st.subheader("Word Cloud")
+                                create_word_cloud(text_data)
+                                # Display the raw text data with timestamps
+                                st.subheader("Raw Text Data with Timestamps")
+                                lines = text_data.split("\n")
+                                for i in range(0, len(lines), 3):
+                                    if i + 2 < len(
+                                            lines):  # Check if there are enough lines to extract timestamp and text
+                                        timestamp = lines[i].strip()
+                                        text = lines[i + 1].strip()
+                                        emotion_result, emoji = analyze_emotion(text)
+                                        st.write(f"{timestamp}\n{text}\n")
+                                        st.write(f"Emotion Analysis: {emotion_result} {emoji}\n")
+
 
 if __name__ == '__main__':
     main()

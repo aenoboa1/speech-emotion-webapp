@@ -1,18 +1,18 @@
 from gradio_client import Client
 
-client = Client("https://14c5b40f5b6d6294b9.gradio.live/")
+client = Client("https://6041351f74f0dabcb0.gradio.live/")
 result = client.predict(
-				"tiny",
+				"medium",
 				"Spanish",
 				"",	
 				["test.wav"],	# List[str] (List of filepath(s) or URL(s) to files) in 'Upload Files' File component
-				"test.wav",	# str (filepath or URL to file) in 'Microphone Input' Audio component
+				"",#Microphone Input' Audio component
 				"transcribe",	
 				"none",	
 				5,	
 				5,	
-				True,
-				True,	
+				False,
+				False,
 				api_name="/predict"
 )
-print(result)
+print(result[2])
