@@ -8,23 +8,22 @@ import matplotlib.pyplot as plt
 
 # constants
 starttime = datetime.now()
-
-CAT6 = ['fear', 'angry', 'neutral', 'happy', 'sad', 'surprise']
-CAT7 = ['fear', 'disgust', 'neutral', 'happy', 'sad', 'surprise', 'angry']
-CAT3 = ["positive", "neutral", "negative"]
-
+CAT6 = ['miedo', 'enojo', 'neutral', 'feliz', 'triste', 'sorpresa']
+CAT7 = ['miedo', 'asco', 'neutral', 'feliz', 'triste', 'sorpresa', 'enojo']
+CAT3 = ["positivo", "neutral", "negativo"]
 COLOR_DICT = {"neutral": "grey",
-                  "positive": "green",
-                  "happy": "green",
-                  "surprise": "orange",
-                  "fear": "purple",
-                  "negative": "red",
-                  "angry": "red",
-                  "sad": "lightblue",
-                  "disgust":"brown"}
+                  "positivo": "green",
+                  "feliz": "green",
+                  "sorpresa": "orange",
+                  "miedo": "purple",
+                  "negativo": "red",
+                  "enojo": "red",
+                  "triste": "lightblue",
+                  "asco":"brown"}
 
-TEST_CAT = ['fear', 'disgust', 'neutral', 'happy', 'sad', 'surprise', 'angry']
-TEST_PRED = np.array([.3,.3,.4,.1,.6,.9,.1])
+
+TEST_CAT = ['miedo', 'asco', 'neutral', 'feliz', 'triste', 'sorpresa', 'enojo']
+TEST_PRED = np.array([.3, .3, .4, .1, .6, .9, .1])
 
 # page settings
 # st.set_page_config(page_title="SER web-app", page_icon=":speech_balloon:", layout="wide")
