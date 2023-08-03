@@ -64,20 +64,35 @@ def log_file(txt=None):
 
 
 def analyze_emotion(text):
-    # Create the SentimentAnalyzer object
-
     # Analyze the emotion of the text
-    emotion_result = analyzer.predict_emotion(text)
+    emotion_result = analyzer.predict(text)
+    emotion = emotion_result.output
+    probabilities = emotion_result.probas
 
     # Get the corresponding emoji for the emotion
-    emoji = getEmoji.get(emotion_result, "")
+    emoji = getEmoji.get(emotion, "")
 
-    return emotion_result, emoji
+    return emotion, emoji, probabilities
+
+
+def plot_emotion_probabilities(probabilities):
+    emotions = list(probabilities.keys())
+    probabilities = list(probabilities.values())
+
+    # Create a bar chart
+    plt.bar(emotions, probabilities)
+    plt.xlabel("Emotion")
+    plt.ylabel("Probability")
+    plt.title("Emotion Probabilities")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    return plt
 
 
 # @st.cache
 def save_audio(file):
-    if file.size > 4000000:
+    if file.size > 40000000:
         return 1
     folder = "audio"
     datetoday = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -388,7 +403,7 @@ def main():
                         if whisper:
                             with st.spinner('Procesando Trasncripción'):
                                 result = client.predict(
-                                    "tiny",
+                                    "medium",
                                     "Spanish",
                                     "",
                                     [f"./audio/{audio_file.name}"],
@@ -404,20 +419,29 @@ def main():
                                 # Split the data_string into filepaths and text_data
                                 text_data = result[2]
 
+                                # Skip the WEBVTT header and start processing from the first timestamp
+                                lines = text_data.split("\n")
+                                start_index = 0
+                                while start_index < len(lines):
+                                    if "-->" in lines[start_index]:
+                                        break
+                                    start_index += 1
+
                                 # Show the word cloud
                                 st.subheader("Word Cloud")
-                                create_word_cloud(text_data)
-                                # Display the raw text data with timestamps
-                                st.subheader("Raw Text Data with Timestamps")
-                                lines = text_data.split("\n")
-                                for i in range(0, len(lines), 3):
+                                create_word_cloud("\n".join(lines[start_index + 1:]))
+
+                                # Display the raw text data with timestamps and emotion analysis
+                                st.subheader("Raw Text Data with Timestamps and Emotion Analysis")
+                                for i in range(start_index, len(lines), 3):
                                     if i + 2 < len(
                                             lines):  # Check if there are enough lines to extract timestamp and text
                                         timestamp = lines[i].strip()
                                         text = lines[i + 1].strip()
-                                        emotion_result, emoji = analyze_emotion(text)
+                                        emotion_result, emoji, probabilities = analyze_emotion(text)
                                         st.write(f"{timestamp}\n{text}\n")
                                         st.write(f"Emotion Analysis: {emotion_result} {emoji}\n")
+                                        st.pyplot(plot_emotion_probabilities(probabilities))
 
 
 if __name__ == '__main__':
