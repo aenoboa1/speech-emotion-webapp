@@ -68,27 +68,39 @@ def analyze_emotion(text):
     emotion_result = analyzer.predict(text)
     emotion = emotion_result.output
     probabilities = emotion_result.probas
-
-    # Get the corresponding emoji for the emotion
-    emoji = getEmoji.get(emotion, "")
-
-    return emotion, emoji, probabilities
+    return emotion, probabilities
 
 
-@st.cache_resource
+@st.cache
 def plot_emotion_probabilities(probabilities):
+    emotions_emoji_dict = {
+        "anger": ("😠", "red"),
+        "disgust": ("🤮", "purple"),
+        "fear": ("😨😱", "orange"),
+        "happy": ("🤗", "green"),
+        "joy": ("😂", "yellow"),
+        "neutral": ("😐", "gray"),
+        "sad": ("😔", "blue"),
+        "sadness": ("😔", "blue"),
+        "shame": ("😳", "pink"),
+        "surprise": ("😮", "cyan")
+    }
+
     emotions = list(probabilities.keys())
     probabilities = list(probabilities.values())
 
-    # Create a bar chart
-    plt.bar(emotions, probabilities)
-    plt.xlabel("Emotion")
-    plt.ylabel("Probability")
-    plt.title("Emotion Probabilities")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+    # Create a bar chart using Plotly
+    fig = go.Figure(go.Bar(x=emotions, y=probabilities,
+                           marker=dict(color=[emotions_emoji_dict[emotion][1] for emotion in emotions])))
 
-    return plt
+    fig.update_layout(
+        xaxis=dict(tickangle=45),
+        yaxis=dict(title="Probability"),
+        title="Emotion Probabilities",
+        showlegend=False
+    )
+
+    return fig
 
 
 # @st.cache
@@ -187,20 +199,6 @@ def plot_polar(fig, predictions=TEST_PRED, categories=TEST_CAT, title="TEST", co
     plt.subplots_adjust(top=0.75)
 
 
-getEmoji = {
-    "happy": "😊",
-    "neutral": "😐",
-    "sad": "😔",
-    "disgust": "🤢",
-    "surprise": "😲",
-    "fear": "😨",
-    "angry": "😡",
-    "positive": "🙂",
-    "neutral": "😐",
-    "negative": "☹️",
-}
-
-
 def plotPie(labels, values):
     fig = go.Figure(
         go.Pie(
@@ -230,8 +228,7 @@ def main():
         st.image(side_img, width=300)
     st.sidebar.subheader("Menú")
     website_menu = st.sidebar.selectbox("Menú",
-                                        ("Reconocimiento de Emociones", "Descripción del Proyecto", "Nuestro Equipo",
-                                         "Dejar Comentarios", "Relajarse"))
+                                        ("Reconocimiento de Emociones"))
     st.set_option('deprecation.showfileUploaderEncoding', False)
 
     if website_menu == "Reconocimiento de Emociones":
@@ -342,7 +339,7 @@ def main():
                 st.markdown("## Predicciones")
 
                 with st.container():
-                    col1, col2, col3, col4, col5 = st.columns(5)
+                    col1, col2, col3, col4 = st.columns(4)
                     mfccs = get_mfccs(path, model.input_shape[-1])
                     mfccs = mfccs.reshape(1, *mfccs.shape)
                     pred = model.predict(mfccs)[0]
@@ -367,6 +364,7 @@ def main():
                             COLORS = color_dict(COLOR_DICT)
                             plot_colored_polar(fig2, predictions=pred, categories=CAT6,
                                                title=txt, colors=COLORS)
+                            st.write(fig2)
 
                     with col3:
                         if em7:
@@ -400,49 +398,53 @@ def main():
                                 plt.axis("off")
                                 st.write(fig4)
 
-                    with col5:
-                        if whisper:
-                            with st.spinner('Procesando Trasncripción'):
-                                result = client.predict(
-                                    "medium",
-                                    "Spanish",
-                                    "",
-                                    [f"./audio/{audio_file.name}"],
-                                    "",
-                                    "transcribe",
-                                    "none",
-                                    5,
-                                    5,
-                                    False,
-                                    False,
-                                    api_name="/predict"
-                                )
-                                # Split the data_string into filepaths and text_data
-                                text_data = result[2]
+            with st.container():
+                col1 = st.columns(1)
+                with col1:
+                    if whisper:
+                        with st.spinner('Procesando Trasncripción'):
+                            result = client.predict(
+                                "medium",
+                                "Spanish",
+                                "",
+                                [f"./audio/{audio_file.name}"],
+                                "",
+                                "transcribe",
+                                "none",
+                                5,
+                                5,
+                                False,
+                                False,
+                                api_name="/predict"
+                            )
+                            # Split the data_string into filepaths and text_data
+                            text_data = result[2]
 
-                                # Skip the WEBVTT header and start processing from the first timestamp
-                                lines = text_data.split("\n")
-                                start_index = 0
-                                while start_index < len(lines):
-                                    if "-->" in lines[start_index]:
-                                        break
-                                    start_index += 1
+                            # Skip the WEBVTT header and start processing from the first timestamp
+                            lines = text_data.split("\n")
+                            start_index = 0
+                            while start_index < len(lines):
+                                if "-->" in lines[start_index]:
+                                    break
+                                start_index += 1
 
-                                # Show the word cloud
-                                st.subheader("Word Cloud")
-                                create_word_cloud("\n".join(lines[start_index + 1:]))
+                            # Show the word cloud
+                            st.subheader("Word Cloud")
+                            create_word_cloud("\n".join(lines[start_index + 1:]))
 
-                                # Display the raw text data with timestamps and emotion analysis
-                                st.subheader("Raw Text Data with Timestamps and Emotion Analysis")
-                                for i in range(start_index, len(lines), 3):
-                                    if i + 2 < len(
-                                            lines):  # Check if there are enough lines to extract timestamp and text
-                                        timestamp = lines[i].strip()
-                                        text = lines[i + 1].strip()
-                                        emotion_result, emoji, probabilities = analyze_emotion(text)
-                                        st.write(f"{timestamp}\n{text}\n")
-                                        st.write(f"Emotion Analysis: {emotion_result} {emoji}\n")
-                                        st.pyplot(plot_emotion_probabilities(probabilities))
+                            # Display the raw text data with timestamps and emotion analysis
+                            st.subheader("Raw Text Data with Timestamps and Emotion Analysis")
+                            for i in range(start_index, len(lines), 3):
+                                if i + 2 < len(
+                                        lines):  # Check if there are enough lines to extract timestamp and text
+                                    timestamp = lines[i].strip()
+                                    text = lines[i + 1].strip()
+                                    emotion_result, probabilities = analyze_emotion(text)
+                                    st.write(f"{timestamp}\n{text}\n")
+                                    st.write(f"Análisis emocional: {emotion_result}\n")
+                                    fig5 = plt.figure(figsize=(5, 5))
+                                    plot_emotion_probabilities(probabilities)
+                                    st.write(fig5)
 
 
 if __name__ == '__main__':
