@@ -380,9 +380,7 @@ def main():
                                         emotion_result, probabilities = analyze_emotion(text)
                                         st.write(f"{timestamp}\n{text}\n")
                                         st.write(f"Análisis emocional: {emotion_result}\n")
-                                        fig5 = plt.figure(figsize=(5, 5))
-                                        plot_emotion_probabilities(probabilities)
-                                        st.write(fig5)
+                                        st.plotly_chart(plot_emotion_probabilities(probabilities))
                 with st.container():
                     col1, col2, col3, col4 = st.columns(4)
                     mfccs = get_mfccs(path, model.input_shape[-1])
