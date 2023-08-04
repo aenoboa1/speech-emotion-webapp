@@ -90,8 +90,7 @@ def plot_emotion_probabilities(probabilities):
     probabilities = list(probabilities.values())
 
     # Create a bar chart using Plotly
-    fig = go.Figure(go.Bar(x=emotions, y=probabilities,
-                           marker=dict(color=[emotions_emoji_dict[emotion][1] for emotion in emotions])))
+    fig = go.Figure(go.Bar(x=emotions, y=probabilities, marker=dict(color=[emotions_emoji_dict[emotion][1] for emotion in emotions])))
 
     fig.update_layout(
         xaxis=dict(tickangle=45),
@@ -101,6 +100,7 @@ def plot_emotion_probabilities(probabilities):
     )
 
     return fig
+
 
 
 # @st.cache
@@ -228,7 +228,8 @@ def main():
         st.image(side_img, width=300)
     st.sidebar.subheader("Menú")
     website_menu = st.sidebar.selectbox("Menú",
-                                        ("Reconocimiento de Emociones"))
+                                        ("Reconocimiento de Emociones", "Descripción del Proyecto", "Nuestro Equipo",
+                                         "Dejar Comentarios", "Relajarse"))
     st.set_option('deprecation.showfileUploaderEncoding', False)
 
     if website_menu == "Reconocimiento de Emociones":
