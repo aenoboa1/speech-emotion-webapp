@@ -15,7 +15,28 @@ from wordcloud import WordCloud
 from pysentimiento import create_analyzer
 from annotated_text import annotated_text
 from melspec import plot_colored_polar, plot_melspec
+import fer
 
+def load_fer_model():
+    return fer.FER()
+
+def analyze_emotion(image):
+    emotion_model = load_fer_model()
+    emotions, _ = emotion_model.detect_emotions(image)
+    return emotions
+
+def analyze_facial_expression(video_path):
+    cap = cv2.VideoCapture(video_path)
+    emotion_results = []
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Convert frame to RGB
+        emotions = analyze_emotion(frame)
+        emotion_results.append(emotions)
+    cap.release()
+    return emotion_results
 # load models
 model = load_model("model3.h5")
 
@@ -233,7 +254,6 @@ def main():
         model_type = st.sidebar.selectbox("¿Cómo le gustaría hacer la predicción?", ("mfccs", "mel-espectrogramas"))
         em3 = em6 = em7 = gender = False
         st.sidebar.subheader("Configuraciones")
-
         st.markdown("## Cargar el archivo")
         with st.container():
             col1, col2 = st.columns(2)
@@ -308,7 +328,6 @@ def main():
                 st.sidebar.subheader("Archivo de audio")
                 detalles_archivo = {"Nombre de archivo": audio_file.name, "Tamaño de archivo": audio_file.size}
                 st.sidebar.write(detalles_archivo)
-
             with st.container():
                 col1, col2 = st.columns(2)
                 with col1:
@@ -401,7 +420,7 @@ def main():
                     col1, col2 = st.columns(2)
                     with col1:
                         if whisper:
-                            with st.spinner('Procesando Trasncripción'):
+                            with st.spinner('Procesando Transcripción'):
                                 result = client.predict(
                                     "medium",
                                     "Spanish",
@@ -438,11 +457,13 @@ def main():
                                         text = lines[i + 1].strip()
                                         st.markdown(f"{timestamp}")
                                         st.divider()
-                                        if text:
+                                        if text is not " ":
                                             emotion_result, probabilities = analyze_emotion(text)
                                             annotated_text((text, emotion_result))
                                             st.write(f"Análisis emocional: {emotion_result}\n")
                                             st.plotly_chart(plot_emotion_probabilities(probabilities))
+
+
 
 if __name__ == '__main__':
     main()
