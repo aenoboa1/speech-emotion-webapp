@@ -7,6 +7,8 @@ plotly
 requests
 librosa==0.8.0
 streamlit
+gradio-client
+pysentimiento
 tensorflow
 st-annotated-text
 
