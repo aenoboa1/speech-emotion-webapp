@@ -440,7 +440,7 @@ def main():
                                         st.divider()
                                         if text:
                                             emotion_result, probabilities = analyze_emotion(text)
-                                            annotated_text(emotion_result, text)
+                                            annotated_text((text, emotion_result))
                                             st.write(f"Análisis emocional: {emotion_result}\n")
                                             st.plotly_chart(plot_emotion_probabilities(probabilities))
 
