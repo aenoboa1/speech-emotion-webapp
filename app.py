@@ -21,7 +21,7 @@ model = load_model("model3.h5")
 
 # constants
 starttime = datetime.now()
-client = Client("https://6041351f74f0dabcb0.gradio.live/")
+client = Client("https://b33d5ab7b72a667f58.gradio.live/")
 analyzer = create_analyzer(task="emotion", lang="es")
 
 CAT6 = ['miedo', 'enojo', 'neutral', 'feliz', 'triste', 'sorpresa']
@@ -75,6 +75,7 @@ def analyze_emotion(text):
     return emotion, emoji, probabilities
 
 
+@st.cache_resource
 def plot_emotion_probabilities(probabilities):
     emotions = list(probabilities.keys())
     probabilities = list(probabilities.values())
