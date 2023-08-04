@@ -77,12 +77,9 @@ def plot_emotion_probabilities(probabilities):
         "anger": ("😠", "red"),
         "disgust": ("🤮", "purple"),
         "fear": ("😨😱", "orange"),
-        "happy": ("🤗", "green"),
         "joy": ("😂", "yellow"),
-        "neutral": ("😐", "gray"),
-        "sad": ("😔", "blue"),
+        "others": ("😐", "gray"),
         "sadness": ("😔", "blue"),
-        "shame": ("😳", "pink"),
         "surprise": ("😮", "cyan")
     }
 
@@ -90,7 +87,8 @@ def plot_emotion_probabilities(probabilities):
     probabilities = list(probabilities.values())
 
     # Create a bar chart using Plotly
-    fig = go.Figure(go.Bar(x=emotions, y=probabilities, marker=dict(color=[emotions_emoji_dict[emotion][1] for emotion in emotions])))
+    fig = go.Figure(go.Bar(x=emotions, y=probabilities,
+                           marker=dict(color=[emotions_emoji_dict[emotion][1] for emotion in emotions])))
 
     fig.update_layout(
         xaxis=dict(tickangle=45),
@@ -100,7 +98,6 @@ def plot_emotion_probabilities(probabilities):
     )
 
     return fig
-
 
 
 # @st.cache
@@ -296,9 +293,9 @@ def main():
         if model_type == "mfccs":
             em3 = st.sidebar.checkbox("3 emociones", True)
             em6 = st.sidebar.checkbox("6 emociones", True)
-            em7 = st.sidebar.checkbox("7 emociones")
-            whisper = st.sidebar.checkbox("Trancripción Whisper")
-            gender = st.sidebar.checkbox("género")
+            em7 = st.sidebar.checkbox("7 emociones", True)
+            whisper = st.sidebar.checkbox("Trancripción Whisper", True)
+            gender = st.sidebar.checkbox("género", True)
 
         elif model_type == "mel-espectrogramas":
             st.sidebar.warning("Este modelo está temporalmente deshabilitado")
@@ -340,7 +337,54 @@ def main():
                 st.markdown("## Predicciones")
 
                 with st.container():
-                    col1, col2, col3, col4,col5 = st.columns(5)
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if whisper:
+                            with st.spinner('Procesando Trasncripción'):
+                                result = client.predict(
+                                    "medium",
+                                    "Spanish",
+                                    "",
+                                    [f"./audio/{audio_file.name}"],
+                                    "",
+                                    "transcribe",
+                                    "none",
+                                    5,
+                                    5,
+                                    False,
+                                    False,
+                                    api_name="/predict"
+                                )
+                                # Split the data_string into filepaths and text_data
+                                text_data = result[2]
+
+                                # Skip the WEBVTT header and start processing from the first timestamp
+                                lines = text_data.split("\n")
+                                start_index = 0
+                                while start_index < len(lines):
+                                    if "-->" in lines[start_index]:
+                                        break
+                                    start_index += 1
+
+                                # Show the word cloud
+                                st.subheader("Word Cloud")
+                                create_word_cloud("\n".join(lines[start_index + 1:]))
+
+                                # Display the raw text data with timestamps and emotion analysis
+                                st.subheader("Raw Text Data with Timestamps and Emotion Analysis")
+                                for i in range(start_index, len(lines), 3):
+                                    if i + 2 < len(
+                                            lines):  # Check if there are enough lines to extract timestamp and text
+                                        timestamp = lines[i].strip()
+                                        text = lines[i + 1].strip()
+                                        emotion_result, probabilities = analyze_emotion(text)
+                                        st.write(f"{timestamp}\n{text}\n")
+                                        st.write(f"Análisis emocional: {emotion_result}\n")
+                                        fig5 = plt.figure(figsize=(5, 5))
+                                        plot_emotion_probabilities(probabilities)
+                                        st.write(fig5)
+                with st.container():
+                    col1, col2, col3, col4 = st.columns(4)
                     mfccs = get_mfccs(path, model.input_shape[-1])
                     mfccs = mfccs.reshape(1, *mfccs.shape)
                     pred = model.predict(mfccs)[0]
@@ -398,52 +442,6 @@ def main():
                                 plt.imshow(img)
                                 plt.axis("off")
                                 st.write(fig4)
-
-                    with col5:
-                        if whisper:
-                            with st.spinner('Procesando Trasncripción'):
-                                result = client.predict(
-                                    "medium",
-                                    "Spanish",
-                                    "",
-                                    [f"./audio/{audio_file.name}"],
-                                    "",
-                                    "transcribe",
-                                    "none",
-                                    5,
-                                    5,
-                                    False,
-                                    False,
-                                    api_name="/predict"
-                                )
-                                # Split the data_string into filepaths and text_data
-                                text_data = result[2]
-
-                                # Skip the WEBVTT header and start processing from the first timestamp
-                                lines = text_data.split("\n")
-                                start_index = 0
-                                while start_index < len(lines):
-                                    if "-->" in lines[start_index]:
-                                        break
-                                    start_index += 1
-
-                                # Show the word cloud
-                                st.subheader("Word Cloud")
-                                create_word_cloud("\n".join(lines[start_index + 1:]))
-
-                                # Display the raw text data with timestamps and emotion analysis
-                                st.subheader("Raw Text Data with Timestamps and Emotion Analysis")
-                                for i in range(start_index, len(lines), 3):
-                                    if i + 2 < len(
-                                            lines):  # Check if there are enough lines to extract timestamp and text
-                                        timestamp = lines[i].strip()
-                                        text = lines[i + 1].strip()
-                                        emotion_result, probabilities = analyze_emotion(text)
-                                        st.write(f"{timestamp}\n{text}\n")
-                                        st.write(f"Análisis emocional: {emotion_result}\n")
-                                        fig5 = plt.figure(figsize=(5, 5))
-                                        plot_emotion_probabilities(probabilities)
-                                        st.write(fig5)
 
 
 if __name__ == '__main__':
