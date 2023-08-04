@@ -17,26 +17,6 @@ from annotated_text import annotated_text
 from melspec import plot_colored_polar, plot_melspec
 import fer
 
-def load_fer_model():
-    return fer.FER()
-
-def analyze_emotion(image):
-    emotion_model = load_fer_model()
-    emotions, _ = emotion_model.detect_emotions(image)
-    return emotions
-
-def analyze_facial_expression(video_path):
-    cap = cv2.VideoCapture(video_path)
-    emotion_results = []
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Convert frame to RGB
-        emotions = analyze_emotion(frame)
-        emotion_results.append(emotions)
-    cap.release()
-    return emotion_results
 # load models
 model = load_model("model3.h5")
 
@@ -85,11 +65,11 @@ def log_file(txt=None):
 
 
 def analyze_emotion(text):
-    # Analyze the emotion of the text
-    emotion_result = analyzer.predict(text)
-    emotion = emotion_result.output
-    probabilities = emotion_result.probas
-    return emotion, probabilities
+   # Analyze the emotion of the text
+   emotion_result = analyzer.predict(text)
+   emotion = emotion_result.output
+   probabilities = emotion_result.probas
+   return emotion, probabilities
 
 
 def plot_emotion_probabilities(probabilities):
@@ -184,10 +164,8 @@ def color_dict(coldict=COLOR_DICT):
 @st.cache_resource
 def plot_polar(fig, predictions=TEST_PRED, categories=TEST_CAT, title="TEST", colors=COLOR_DICT):
     # color_sector = "grey"
-
     N = len(predictions)
     ind = predictions.argmax()
-
     COLOR = color_sector = colors[categories[ind]]
     theta = np.linspace(0.0, 2 * np.pi, N, endpoint=False)
     radii = np.zeros_like(predictions)
@@ -198,12 +176,10 @@ def plot_polar(fig, predictions=TEST_PRED, categories=TEST_CAT, title="TEST", co
     ax.bar(theta, radii, width=width, bottom=0.0, color=color_sector, alpha=0.25)
     angles = [i / float(N) * 2 * np.pi for i in range(N)]
     angles += angles[:1]
-
     data = list(predictions)
     data += data[:1]
     plt.polar(angles, data, color=COLOR, linewidth=2)
     plt.fill(angles, data, facecolor=COLOR, alpha=0.25)
-
     ax.spines['polar'].set_color('lightgrey')
     ax.set_theta_offset(np.pi / 3)
     ax.set_theta_direction(-1)
@@ -226,16 +202,11 @@ def plotPie(labels, values):
         ))
     st.plotly_chart(fig, use_container_width=True)
 
-
 lastSearched = ""
 cacheData = {}
 
-
 def create_word_cloud(text_data):
-    # Create a WordCloud object
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text_data)
-
-    # Display the generated word cloud using Streamlit
     st.image(wordcloud.to_array(), use_column_width=True)
 
 
@@ -354,8 +325,6 @@ def main():
             if model_type == "mfccs":
                 st.markdown("## Predicciones")
 
-
-
                 with st.container():
                     col1, col2, col3, col4 = st.columns(4)
                     mfccs = get_mfccs(path, model.input_shape[-1])
@@ -452,7 +421,8 @@ def main():
 
                                 st.subheader("Emoción obtenida apartir de la transcripción de texto:")
                                 for i in range(start_index, len(lines), 3):
-                                    if i + 2 < len(lines):  # Check if there are enough lines to extract timestamp and text
+                                    if i + 2 < len(
+                                            lines):  # Check if there are enough lines to extract timestamp and text
                                         timestamp = lines[i].strip()
                                         text = lines[i + 1].strip()
                                         st.markdown(f"{timestamp}")
@@ -462,7 +432,6 @@ def main():
                                             annotated_text((text, emotion_result))
                                             st.write(f"Análisis emocional: {emotion_result}\n")
                                             st.plotly_chart(plot_emotion_probabilities(probabilities))
-
 
 
 if __name__ == '__main__':
