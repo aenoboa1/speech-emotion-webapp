@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 from tensorflow.keras.models import load_model
 from wordcloud import WordCloud
 from pysentimiento import create_analyzer
-
+from annotated_text import annotated_text
 from melspec import plot_colored_polar, plot_melspec
 
 # load models
@@ -71,7 +71,6 @@ def analyze_emotion(text):
     return emotion, probabilities
 
 
-@st.cache
 def plot_emotion_probabilities(probabilities):
     emotions_emoji_dict = {
         "anger": ("😠", "red"),
@@ -336,51 +335,8 @@ def main():
             if model_type == "mfccs":
                 st.markdown("## Predicciones")
 
-                with st.container():
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if whisper:
-                            with st.spinner('Procesando Trasncripción'):
-                                result = client.predict(
-                                    "medium",
-                                    "Spanish",
-                                    "",
-                                    [f"./audio/{audio_file.name}"],
-                                    "",
-                                    "transcribe",
-                                    "none",
-                                    5,
-                                    5,
-                                    False,
-                                    False,
-                                    api_name="/predict"
-                                )
-                                # Split the data_string into filepaths and text_data
-                                text_data = result[2]
 
-                                # Skip the WEBVTT header and start processing from the first timestamp
-                                lines = text_data.split("\n")
-                                start_index = 0
-                                while start_index < len(lines):
-                                    if "-->" in lines[start_index]:
-                                        break
-                                    start_index += 1
 
-                                # Show the word cloud
-                                st.subheader("Word Cloud")
-                                create_word_cloud("\n".join(lines[start_index + 1:]))
-
-                                # Display the raw text data with timestamps and emotion analysis
-                                st.subheader("Raw Text Data with Timestamps and Emotion Analysis")
-                                for i in range(start_index, len(lines), 3):
-                                    if i + 2 < len(
-                                            lines):  # Check if there are enough lines to extract timestamp and text
-                                        timestamp = lines[i].strip()
-                                        text = lines[i + 1].strip()
-                                        emotion_result, probabilities = analyze_emotion(text)
-                                        st.write(f"{timestamp}\n{text}\n")
-                                        st.write(f"Análisis emocional: {emotion_result}\n")
-                                        st.plotly_chart(plot_emotion_probabilities(probabilities))
                 with st.container():
                     col1, col2, col3, col4 = st.columns(4)
                     mfccs = get_mfccs(path, model.input_shape[-1])
@@ -441,6 +397,52 @@ def main():
                                 plt.axis("off")
                                 st.write(fig4)
 
+                with st.container():
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if whisper:
+                            with st.spinner('Procesando Trasncripción'):
+                                result = client.predict(
+                                    "medium",
+                                    "Spanish",
+                                    "",
+                                    [f"./audio/{audio_file.name}"],
+                                    "",
+                                    "transcribe",
+                                    "none",
+                                    5,
+                                    5,
+                                    False,
+                                    False,
+                                    api_name="/predict"
+                                )
+                                # Split the data_string into filepaths and text_data
+                                text_data = result[2]
+
+                                # Skip the WEBVTT header and start processing from the first timestamp
+                                lines = text_data.split("\n")
+                                start_index = 0
+                                while start_index < len(lines):
+                                    if "-->" in lines[start_index]:
+                                        break
+                                    start_index += 1
+
+                                # Show the word cloud
+                                st.subheader("Word Cloud")
+                                create_word_cloud("\n".join(lines[start_index + 1:]))
+
+                                st.subheader("Emoción obtenida apartir de la transcripción de texto:")
+                                for i in range(start_index, len(lines), 3):
+                                    if i + 2 < len(lines):  # Check if there are enough lines to extract timestamp and text
+                                        timestamp = lines[i].strip()
+                                        text = lines[i + 1].strip()
+                                        st.markdown(f"{timestamp}")
+                                        st.divider()
+                                        if text:
+                                            emotion_result, probabilities = analyze_emotion(text)
+                                            annotated_text(emotion_result, text)
+                                            st.write(f"Análisis emocional: {emotion_result}\n")
+                                            st.plotly_chart(plot_emotion_probabilities(probabilities))
 
 if __name__ == '__main__':
     main()

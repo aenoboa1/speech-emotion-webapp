@@ -8,4 +8,5 @@ requests
 librosa==0.8.0
 streamlit
 tensorflow
+st-annotated-text
 
