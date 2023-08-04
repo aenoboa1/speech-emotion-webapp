@@ -1,14 +1,20 @@
-numpy
+numpy~=1.24.3
 pandas
-matplotlib
-Pillow
+matplotlib~=3.7.2
+Pillow~=9.5.0
 opencv-python-headless
-plotly
+plotly~=5.9.0
 requests
 librosa==0.8.0
-streamlit
+streamlit~=1.25.0
 gradio-client
-pysentimiento
-tensorflow
+pysentimiento~=0.7.1
+tensorflow~=2.13.0
 st-annotated-text
 
+
+opencv-python~=4.8.0.74
+fer~=22.5.1
+wordcloud~=1.9.2
+pydub~=0.25.1
+openai~=0.27.8
