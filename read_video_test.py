@@ -1,18 +1,26 @@
+import numpy as np
 import streamlit as st
 import subprocess
 import cv2
-import tensorflow as tf
 from deepface import DeepFace
-from retinaface import RetinaFace
+import mediapipe as mp
 
 video_data = st.file_uploader("Upload file", ['mp4','mov', 'avi'])
 
 temp_file_to_save = './temp_file_1.mp4'
 temp_file_result  = './temp_file_2.mp4'
 
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-if len(physical_devices) > 0:
-    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+backends = [
+  'opencv',
+  'ssd',
+  'dlib',
+  'mtcnn',
+  'retinaface',
+  'mediapipe',
+  'yolov8',
+  'yunet',
+]
+
 # func to save BytesIO on a drive
 def write_bytesio_to_file(filename, bytesio):
     """
@@ -24,28 +32,34 @@ def write_bytesio_to_file(filename, bytesio):
         # Copy the BytesIO stream to the output file
         outfile.write(bytesio.getbuffer())
 
-def retina(image):
-    faces = RetinaFace.detect_faces(image)
-    for _, face in faces.items():
-        facial_area = face["facial_area"]
-        landmarks = face["landmarks"]
-        # highlight facial area
-        cv2.rectangle(image, (facial_area[2], facial_area[3]), (facial_area[0], facial_area[1]), (255, 0, 0), 2)
+def detect_emotion(face_image):
+    resized_face_image = cv2.resize(face_image, (48, 48))
+    resized_face_image = np.expand_dims(resized_face_image, axis=0)
+    emotions = DeepFace.analyze(face_image, actions=['emotion'], enforce_detection=False)
+    emotion_label = emotions['dominant_emotion']
+    return emotion_label
 
-        # highlight the landmarks
-        for k, v in landmarks.items():
-            cv2.circle(image, tuple(map(int, v)), 1, (0, 255, 0), cv2.FILLED)
+def mediapipe_face_detection(image):
+    mp_face_detection = mp.solutions.face_detection.FaceDetection(min_detection_confidence=0.5)
+    results = mp_face_detection.process(image)
 
-        # Get facial area for emotion detection
-        top, right, bottom, left = face["facial_area"]
-        face_image = image[top:bottom, left:right]
+    if results.detections:
+        for detection in results.detections:
+            bboxC = detection.location_data.relative_bounding_box
+            ih, iw, _ = image.shape
+            bbox = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
 
-        # Perform emotion detection using deepface
-        #emotion = DeepFace.analyze(face_image, actions=['emotion'],enforce_detection=False)
+            x, y, w, h = bbox
+            face_image = image[y:y + h, x:x + w]
 
-        # Display the emotion
-        return face_image
+            # Perform emotion detection using DeepFace
+            #emotion_label = detect_emotion(face_image)
 
+            # Draw the emotion label on the frame
+            #cv2.putText(image, emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    return image
 if video_data:
     # save uploaded video to disc
     write_bytesio_to_file(temp_file_to_save, video_data)
@@ -69,7 +83,7 @@ if video_data:
         if not ret:
             break
 
-        emotion_dominant = retina(frame)
+        emotion_dominant = mediapipe_face_detection(frame)
         # Draw the emotion label on the frame
         #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) ##<< Generates a grayscale (thus only one 2d-array)
 
