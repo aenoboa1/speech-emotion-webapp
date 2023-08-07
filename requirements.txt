@@ -11,3 +11,4 @@ gradio-client
 pysentimiento
 tensorflow
 st-annotated-text
+mediapipe
