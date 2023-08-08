@@ -1,5 +1,8 @@
+from collections import Counter
+
 import numpy as np
 import streamlit as st
+import plotly.graph_objects as go
 import subprocess
 import cv2
 from deepface import DeepFace
@@ -34,23 +37,26 @@ def write_bytesio_to_file(filename, bytesio):
         outfile.write(bytesio.getbuffer())
 
 
+
 def detect_emotion(face_image):
     # Ensure the face image is not empty
+    if face_image is None or face_image.size == 0:
+        return None
 
-    st.image(face_image)
-    image_batch = np.expand_dims(face_image, axis=0)
-    # Resize the face image to match the expected input shape of the emotion detection model
+    # Add a batch dimension to the face_image
+
     # Perform emotion detection using DeepFace
-    print(image_batch.shape)
-    emotions = DeepFace.analyze(
-        image_batch,
-        actions=['emotion'],
-        enforce_detection=False,
-        detector_backend=backends[4]
-        )
+    emotions_list = DeepFace.analyze(face_image, actions=['emotion'], enforce_detection=False)
+
+    # Check if the emotions_list is empty
+    if not emotions_list:
+        return None
+
+    # Get the first result from the list
+    emotions = emotions_list[0]
+
     emotion_label = emotions['dominant_emotion']
     return emotion_label
-
 
 def mediapipe_face_detection(image):
     mp_face_detection = mp.solutions.face_detection.FaceDetection(min_detection_confidence=0.5)
@@ -62,21 +68,30 @@ def mediapipe_face_detection(image):
             bboxC = detection.location_data.relative_bounding_box
             bbox = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
             x, y, w, h = bbox
+
             # Ensure the bounding box coordinates are within image boundaries
             x = max(0, x)
             y = max(0, y)
             w = min(iw - x, w)
             h = min(ih - y, h)
-            face_image = image[y:y + h, x:x + w]
-            # Perform emotion detection using DeepFace
-            emotion_label = detect_emotion(face_image)
-            if emotion_label is not None:
-                # Draw the emotion label on the frame
-                cv2.putText(image, emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+            # Check if the bounding box has a valid size
+            if w > 0 and h > 0:
+                face_image = image[y:y + h, x:x + w]
+
+                # Convert face_image to BGR format if it is not already in BGR format
+                if not isinstance(face_image, np.ndarray) or face_image.shape[-1] != 3:
+                    face_image = cv2.cvtColor(face_image, cv2.COLOR_RGB2BGR)
+
+                # Perform emotion detection using DeepFace
+                emotion_label = detect_emotion(face_image)
+                current_timestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+
+                if emotion_label is not None:
+                    # Draw the emotion label on the frame
+                    cv2.putText(image, emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
     return image
-
-
 if video_data:
     # save uploaded video to disc
     write_bytesio_to_file(temp_file_to_save, video_data)
@@ -91,22 +106,57 @@ if video_data:
     # specify a writer to write a processed video to a disk frame by frame
     fourcc_mp4 = cv2.VideoWriter_fourcc(*'mp4v')
     out_mp4 = cv2.VideoWriter(temp_file_result, fourcc_mp4, frame_fps, (width, height), isColor=False)
-
+    emotions_list = []
+    timestamps = []
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
         emotion_dominant = mediapipe_face_detection(frame)
+        emotion_label = detect_emotion(frame)
         # Draw the emotion label on the frame
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  ##<< Generates a grayscale (thus only one 2d-array)
+        current_timestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+
+        if emotion_label is not None:
+            emotions_list.append(emotion_label)
+            timestamps.append(current_timestamp)
 
         # Write the frame to the output video
         out_mp4.write(gray)
+        # Create the Plotly timeline
+
+
+
 
         # Show the processed frame (you can comment this out for faster processing)
         # cv2.imshow('Emotion Detection', frame)
 
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=timestamps, y=emotions_list, mode='markers+lines', name='Emotions', line=dict(color='blue', width=2)))
+
+    fig.update_layout(
+        title="Emotion Timeline",
+        xaxis_title="Time (seconds)",
+        yaxis_title="Emotion",
+        template="plotly_white"
+    )
+
+    # Compute the count of each emotion from the emotions_list
+    emotion_counts = dict(Counter(emotions_list))
+
+    # Create the Plotly pie chart for emotion summary
+    fig_pie = go.Figure(data=[go.Pie(labels=list(emotion_counts.keys()), values=list(emotion_counts.values()))])
+
+    fig_pie.update_layout(
+        title="Emotion Summary",
+        template="plotly_white"
+    )
+    # Display the Plotly timeline in Streamlit
+    st.plotly_chart(fig)
+    st.plotly_chart(fig_pie)
     cap.release()
     out_mp4.release()
 
