@@ -86,11 +86,12 @@ class EmotionDetectionApp:
                 break
             emotion_dominant = self.mediapipe_face_detection(frame)
             emotion_label = self.detect_emotion(frame)
+            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             current_timestamp = self.cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
             if emotion_label is not None:
                 self.emotions_list.append(emotion_label)
                 self.timestamps.append(current_timestamp)
-            self.out_mp4.write(frame)
+            self.out_mp4.write(gray)
 
         self.cap.release()
         self.out_mp4.release()

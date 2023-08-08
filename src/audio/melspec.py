@@ -109,4 +109,4 @@ def plot_melspec(path, tmodel=None, three=False,
     return (fig, tpred)
 
 if __name__ == "__main__":
-    plot_melspec("test.wav")
+    plot_melspec("../../test.wav")

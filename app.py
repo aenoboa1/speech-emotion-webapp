@@ -6,7 +6,6 @@ import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
-import streamlit.components.v1 as components
 from gradio_client import Client
 from PIL import Image
 import plotly.graph_objects as go
@@ -14,8 +13,7 @@ from tensorflow.keras.models import load_model
 from wordcloud import WordCloud
 from pysentimiento import create_analyzer
 from annotated_text import annotated_text
-from melspec import plot_colored_polar, plot_melspec
-import fer
+from src.audio.melspec import plot_colored_polar
 
 # load models
 model = load_model("model3.h5")
@@ -216,8 +214,7 @@ def main():
         st.image(side_img, width=300)
     st.sidebar.subheader("Menú")
     website_menu = st.sidebar.selectbox("Menú",
-                                        ("Reconocimiento de Emociones", "Descripción del Proyecto", "Nuestro Equipo",
-                                         "Dejar Comentarios", "Relajarse"))
+                                        ("Reconocimiento de Emociones", "Descripción del Proyecto"))
     st.set_option('deprecation.showfileUploaderEncoding', False)
 
     if website_menu == "Reconocimiento de Emociones":
