@@ -2,12 +2,19 @@ from collections import Counter
 import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
+import plotly.io as pio  # Import plotly.io for locale setting
 import subprocess
 import cv2
 from deepface import DeepFace
 import mediapipe as mp
+from moviepy.video.io.VideoFileClip import VideoFileClip
+
 
 class EmotionDetectionApp:
+    """
+    Main class for EmotionDetection
+    """
+
     def __init__(self):
         self.temp_file_to_save = './temp_file_1.mp4'
         self.temp_file_result = './temp_file_2.mp4'
@@ -20,10 +27,19 @@ class EmotionDetectionApp:
         with open(filename, "wb") as outfile:
             outfile.write(bytesio.getbuffer())
 
+    def extract_audio(self, video_path, output_audio_path):
+        video_clip = VideoFileClip(video_path)
+        audio_clip = video_clip.audio
+        audio_clip.write_audiofile(output_audio_path)
+
     def detect_emotion(self, face_image):
         if face_image is None or face_image.size == 0:
             return None
-        emotions_list = DeepFace.analyze(face_image, actions=['emotion'], enforce_detection=False)
+        emotions_list = DeepFace.analyze(
+            face_image,
+            actions=['emotion'],
+            detector_backend="skip",
+            enforce_detection=False)
         if not emotions_list:
             return None
         emotions = emotions_list[0]
@@ -70,12 +86,11 @@ class EmotionDetectionApp:
                 break
             emotion_dominant = self.mediapipe_face_detection(frame)
             emotion_label = self.detect_emotion(frame)
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             current_timestamp = self.cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
             if emotion_label is not None:
                 self.emotions_list.append(emotion_label)
                 self.timestamps.append(current_timestamp)
-            self.out_mp4.write(gray)
+            self.out_mp4.write(frame)
 
         self.cap.release()
         self.out_mp4.release()
@@ -90,8 +105,15 @@ class EmotionDetectionApp:
         if video_data:
             self.process_video(video_data)
 
+            # Set the locale for plotly figures
+            pio.templates.default = "plotly"
+            pio.templates[pio.templates.default].layout.update(
+                locale='es'  # Set the locale to Spanish for numerical formatting
+            )
+
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=self.timestamps, y=self.emotions_list, mode='markers+lines', name='Emotions', line=dict(color='blue', width=2)))
+            fig.add_trace(go.Scatter(x=self.timestamps, y=self.emotions_list, mode='markers+lines', name='Emotions',
+                                     line=dict(color='blue', width=2)))
             fig.update_layout(
                 title="Emotion Timeline",
                 xaxis_title="Time (seconds)",
@@ -112,12 +134,12 @@ class EmotionDetectionApp:
             self.convert_to_h264()
 
             col1, col2 = st.columns(2)
-            col1.header("Original Video")
+            col1.header("Video original")
             col1.video(self.temp_file_to_save)
-            col2.header("Output from OpenCV (MPEG-4)")
-            col2.video(self.temp_file_result)
-            col2.header("After conversion to H264")
+            col2.header("Video con emociones procesadas")
             col2.video("./testh264.mp4")
+            self.extract_audio("./temp_file_1.mp4", "output_audio.wav")
+
 
 if __name__ == "__main__":
     app = EmotionDetectionApp()
