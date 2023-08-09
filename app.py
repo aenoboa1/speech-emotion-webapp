@@ -313,7 +313,8 @@ class EmotionRecognitionApp:
                     col2.header("Video con emociones procesadas")
                     col2.video("./testh264.mp4")
                     self.extract_audio("./temp_file_1.mp4", "output_audio.wav")
-                    audio_file = open('./output_audio.wav')
+                    audio_path = open('./output_audio.wav','rb')
+                    audio_file = audio_path.read()
                     if audio_file is not None:
                         if not os.path.exists("audio"):
                             os.makedirs("audio")
