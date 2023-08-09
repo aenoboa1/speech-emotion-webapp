@@ -375,10 +375,6 @@ class EmotionRecognitionApp:
 
         if audio_file is not None:
             st.markdown("## Analizando...")
-            if not audio_file == "test":
-                st.sidebar.subheader("Archivo de audio")
-                detalles_archivo = {"Nombre de archivo": audio_file.name, "Tamaño de archivo": audio_file.size}
-                st.sidebar.write(detalles_archivo)
             with st.container():
                 col1, col2 = st.columns(2)
                 with col1:
