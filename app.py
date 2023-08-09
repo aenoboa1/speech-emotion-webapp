@@ -313,12 +313,13 @@ class EmotionRecognitionApp:
                     col2.header("Video con emociones procesadas")
                     col2.video("./testh264.mp4")
                     self.extract_audio("./temp_file_1.mp4", "output_audio.wav")
-                    audio_path = open('./output_audio.wav','rb')
+                    audio_filename = './output_audio.wav'
+                    audio_path = open(audio_filename,'rb')
                     audio_file = audio_path.read()
                     if audio_file is not None:
                         if not os.path.exists("audio"):
                             os.makedirs("audio")
-                        path = os.path.join("audio", audio_file.name)
+                        path = os.path.join("audio",audio_filename)
                         if_save_audio = self.save_audio(audio_file)
                         if if_save_audio == 1:
                             st.warning("El tamaño del archivo es demasiado grande. Intente con otro archivo.")
