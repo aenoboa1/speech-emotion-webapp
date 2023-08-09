@@ -283,8 +283,8 @@ class EmotionRecognitionApp:
         with st.container():
             col1, col2 = st.columns(2)
             with col1:
-                audio_data = None
                 video_data = st.file_uploader("Upload file", ['mp4', 'mov', 'avi'])
+                audio_file = None
                 if video_data:
                     self.process_video(video_data)
                     fig = go.Figure()
