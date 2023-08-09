@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 from datetime import datetime
 import cv2
 import librosa
@@ -16,6 +17,8 @@ from annotated_text import annotated_text
 from src.audio.melspec import plot_colored_polar
 
 
+
+@dataclass
 class EmotionRecognitionApp:
     """
     Emotion Recognition Code APP, accepts an audio file
@@ -25,7 +28,7 @@ class EmotionRecognitionApp:
         # Initialize necessary components
         # self.analyzer = create_analyzer(task="emotion", lang="es")
         self.model = load_model("model3.h5")
-        self.client = Client("https://b33d5ab7b72a667f58.gradio.live/")
+        self.client = Client("https://088748f4f3a1603e6b.gradio.live")
         self.starttime = datetime.now()
         self.CAT6 = ['miedo', 'enojo', 'neutral', 'feliz', 'triste', 'sorpresa']
         self.CAT7 = ['miedo', 'asco', 'neutral', 'feliz', 'triste', 'sorpresa', 'enojo']
@@ -60,11 +63,11 @@ class EmotionRecognitionApp:
             datetoday = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
             f.write(f"{txt} - {datetoday};\n")
 
-    # def analyze_emotion(self, text):
-    #    emotion_result = self.analyzer.predict(text)
-    #    emotion = emotion_result.output
-    #    probabilities = emotion_result.probas
-    #    return emotion, probabilities
+    def analyze_emotion(self, text):
+       emotion_result = self.analyzer.predict(text)
+       emotion = emotion_result.output
+       probabilities = emotion_result.probas
+       return emotion, probabilities
 
     def plot_emotion_probabilities(self, probabilities):
         emotions_emoji_dict = {
@@ -124,7 +127,6 @@ class EmotionRecognitionApp:
         rgbImage = np.repeat(grayImage[..., np.newaxis], 3, -1)
         return rgbImage, Xdb
 
-    @staticmethod
     def get_mfccs(self, audio, limit):
         y, sr = librosa.load(audio)
         a = librosa.feature.mfcc(y, sr=sr, n_mfcc=40)
@@ -350,6 +352,7 @@ class EmotionRecognitionApp:
                                 plt.imshow(img)
                                 plt.axis("off")
                                 st.write(fig4)
+                                @dataclass
 
                 with st.container():
                     col1, col2 = st.columns(2)
