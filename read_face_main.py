@@ -59,6 +59,7 @@ class EmotionDetectionApp:
         self.emotions_list = []
         self.timestamps = []
 
+
     def write_bytesio_to_file(self, filename, bytesio):
         with open(filename, "wb") as outfile:
             outfile.write(bytesio.getbuffer())
@@ -261,13 +262,6 @@ class EmotionDetectionApp:
         video_data = st.file_uploader("Upload file", ['mp4', 'mov', 'avi'])
         if video_data:
             self.process_video(video_data)
-
-            # Set the locale for plotly figures
-            #pio.templates.default = "plotly"
-            #pio.templates[pio.templates.default].layout.update(
-            #    locale='es'  # Set the locale to Spanish for numerical formatting
-            #)
-
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=self.timestamps, y=self.emotions_list, mode='markers+lines', name='Emotions',
                                      line=dict(color='blue', width=2)))

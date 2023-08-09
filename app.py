@@ -1,4 +1,5 @@
 import os
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 import cv2
@@ -10,6 +11,7 @@ import streamlit as st
 from gradio_client import Client
 from PIL import Image
 import plotly.graph_objects as go
+from moviepy.video.io.VideoFileClip import VideoFileClip
 from tensorflow.keras.models import load_model
 from wordcloud import WordCloud
 from pysentimiento import create_analyzer
@@ -26,7 +28,7 @@ class EmotionRecognitionApp:
 
     def __init__(self):
         # Initialize necessary components
-        # self.analyzer = create_analyzer(task="emotion", lang="es")
+        self.analyzer = create_analyzer(task="emotion", lang="es")
         self.model = load_model("model3.h5")
         self.client = Client("https://088748f4f3a1603e6b.gradio.live")
         self.starttime = datetime.now()
@@ -57,6 +59,12 @@ class EmotionRecognitionApp:
                 header {visibility: hidden;}
             </style>
         '''
+        self.temp_file_to_save = './temp_file_1.mp4'
+        self.temp_file_result = './temp_file_2.mp4'
+        self.cap = None
+        self.out_mp4 = None
+        self.emotions_list = []
+        self.timestamps = []
 
     def log_file(self, txt=None):
         with open("log.txt", "a") as f:
@@ -179,8 +187,17 @@ class EmotionRecognitionApp:
         wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text_data)
         st.image(wordcloud.to_array(), use_column_width=True)
 
+    def write_bytesio_to_file(self, filename, bytesio):
+        with open(filename, "wb") as outfile:
+            outfile.write(bytesio.getbuffer())
+
+    def extract_audio(self, video_path, output_audio_path):
+        video_clip = VideoFileClip(video_path)
+        audio_clip = video_clip.audio
+        audio_clip.write_audiofile(output_audio_path)
+
     def main(self):
-        side_img = Image.open("images/emotion3.jpg")
+        side_img = Image.open("images/3603909.png")
         with st.sidebar:
             st.image(side_img, width=300)
             st.sidebar.subheader("Menú")
@@ -199,29 +216,59 @@ class EmotionRecognitionApp:
             # audio_file = None
             # path = None
             with col1:
+
+                video_data = st.file_uploader("Upload file", ['mp4', 'mov', 'avi'])
                 audio_file = st.file_uploader("Cargar archivo de audio", type=['wav', 'mp3', 'ogg'])
-                if audio_file is not None:
-                    if not os.path.exists("audio"):
-                        os.makedirs("audio")
-                    path = os.path.join("audio", audio_file.name)
-                    if_save_audio = self.save_audio(audio_file)
-                    if if_save_audio == 1:
-                        st.warning("El tamaño del archivo es demasiado grande. Intente con otro archivo.")
-                    elif if_save_audio == 0:
-                        # extraer características
-                        # mostrar el audio
-                        st.audio(audio_file, format='audio/wav', start_time=0)
-                        try:
-                            wav, sr = librosa.load(path, sr=44100)
-                            Xdb = self.get_melspec(path)[1]
-                            mfccs = librosa.feature.mfcc(wav, sr=sr)
-                            # # mostrar el audio
-                            # st.audio(audio_file, format='audio/wav', start_time=0)
-                        except Exception as e:
-                            audio_file = None
-                            st.error(f"Error {e} - formato incorrecto del archivo. Intente con otro archivo .wav.")
-                    else:
-                        st.error("Error desconocido")
+                if video_data:
+                    self.process_video(video_data)
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(x=self.timestamps, y=self.emotions_list, mode='markers+lines', name='Emotions',
+                                             line=dict(color='blue', width=2)))
+                    fig.update_layout(
+                        title="Emotion Timeline",
+                        xaxis_title="Time (seconds)",
+                        yaxis_title="Emotion",
+                        template="plotly_white"
+                    )
+                    emotion_counts = dict(Counter(self.emotions_list))
+                    fig_pie = go.Figure(data=[go.Pie(labels=list(emotion_counts.keys()), values=list(emotion_counts.values()))])
+                    fig_pie.update_layout(
+                        title="Emotion Summary",
+                        template="plotly_white"
+                    )
+                    st.plotly_chart(fig)
+                    st.plotly_chart(fig_pie)
+                    self.convert_to_h264()
+                    col1, col2 = st.columns(2)
+                    col1.header("Video original")
+                    col1.video(self.temp_file_to_save)
+                    col2.header("Video con emociones procesadas")
+                    col2.video("./testh264.mp4")
+                    audio_file = self.extract_audio("./temp_file_1.mp4", "output_audio.wav")
+
+                    if audio_file is not None:
+                        if not os.path.exists("audio"):
+                            os.makedirs("audio")
+                        path = os.path.join("audio", audio_file.name)
+                        if_save_audio = self.save_audio(audio_file)
+                        if if_save_audio == 1:
+                            st.warning("El tamaño del archivo es demasiado grande. Intente con otro archivo.")
+                        elif if_save_audio == 0:
+                            # extraer características
+                            # mostrar el audio
+                            st.audio(audio_file, format='audio/wav', start_time=0)
+                            try:
+                                wav, sr = librosa.load(path, sr=44100)
+                                Xdb = self.get_melspec(path)[1]
+                                mfccs = librosa.feature.mfcc(wav, sr=sr)
+                                # # mostrar el audio
+                                # st.audio(audio_file, format='audio/wav', start_time=0)
+                            except Exception as e:
+                                audio_file = None
+                                st.error(f"Error {e} - formato incorrecto del archivo. Intente con otro archivo .wav.")
+                        else:
+                            st.error("Error desconocido")
+
                 else:
                     if st.button("Probar con archivo de prueba"):
                         wav, sr = librosa.load("test.wav", sr=44100)
