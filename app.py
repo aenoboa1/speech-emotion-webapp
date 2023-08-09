@@ -74,10 +74,10 @@ class EmotionRecognitionApp:
             f.write(f"{txt} - {datetoday};\n")
 
     def analyze_emotion(self, text):
-       emotion_result = self.analyzer.predict(text)
-       emotion = emotion_result.output
-       probabilities = emotion_result.probas
-       return emotion, probabilities
+        emotion_result = self.analyzer.predict(text)
+        emotion = emotion_result.output
+        probabilities = emotion_result.probas
+        return emotion, probabilities
 
     def plot_emotion_probabilities(self, probabilities):
         emotions_emoji_dict = {
@@ -282,17 +282,15 @@ class EmotionRecognitionApp:
             st.markdown("## Cargar el archivo")
         with st.container():
             col1, col2 = st.columns(2)
-            # audio_file = None
-            # path = None
             with col1:
-
+                audio_data = None
                 video_data = st.file_uploader("Upload file", ['mp4', 'mov', 'avi'])
-                audio_file = st.file_uploader("Cargar archivo de audio", type=['wav', 'mp3', 'ogg'])
                 if video_data:
                     self.process_video(video_data)
                     fig = go.Figure()
-                    fig.add_trace(go.Scatter(x=self.timestamps, y=self.emotions_list, mode='markers+lines', name='Emotions',
-                                             line=dict(color='blue', width=2)))
+                    fig.add_trace(
+                        go.Scatter(x=self.timestamps, y=self.emotions_list, mode='markers+lines', name='Emotions',
+                                   line=dict(color='blue', width=2)))
                     fig.update_layout(
                         title="Emotion Timeline",
                         xaxis_title="Time (seconds)",
@@ -300,7 +298,8 @@ class EmotionRecognitionApp:
                         template="plotly_white"
                     )
                     emotion_counts = dict(Counter(self.emotions_list))
-                    fig_pie = go.Figure(data=[go.Pie(labels=list(emotion_counts.keys()), values=list(emotion_counts.values()))])
+                    fig_pie = go.Figure(
+                        data=[go.Pie(labels=list(emotion_counts.keys()), values=list(emotion_counts.values()))])
                     fig_pie.update_layout(
                         title="Emotion Summary",
                         template="plotly_white"
@@ -313,8 +312,8 @@ class EmotionRecognitionApp:
                     col1.video(self.temp_file_to_save)
                     col2.header("Video con emociones procesadas")
                     col2.video("./testh264.mp4")
-                    audio_file = self.extract_audio("./temp_file_1.mp4", "output_audio.wav")
-
+                    self.extract_audio("./temp_file_1.mp4", "output_audio.wav")
+                    audio_file = open('./output_audio.wav')
                     if audio_file is not None:
                         if not os.path.exists("audio"):
                             os.makedirs("audio")
