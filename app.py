@@ -352,8 +352,6 @@ class EmotionRecognitionApp:
                                 plt.imshow(img)
                                 plt.axis("off")
                                 st.write(fig4)
-                                @dataclass
-
                 with st.container():
                     col1, col2 = st.columns(2)
                     with col1:
