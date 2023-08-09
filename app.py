@@ -287,6 +287,12 @@ class EmotionRecognitionApp:
                 audio_file = None
                 if video_data:
                     self.process_video(video_data)
+                    self.convert_to_h264()
+                    col1, col2 = st.columns(2)
+                    col1.header("Video original")
+                    col1.video(self.temp_file_to_save)
+                    col2.header("Video con emociones procesadas")
+                    col2.video("./testh264.mp4")
                     fig = go.Figure()
                     fig.add_trace(
                         go.Scatter(x=self.timestamps, y=self.emotions_list, mode='markers+lines', name='Emotions',
@@ -306,13 +312,8 @@ class EmotionRecognitionApp:
                     )
                     st.plotly_chart(fig)
                     st.plotly_chart(fig_pie)
-                    self.convert_to_h264()
-                    col1, col2 = st.columns(2)
-                    col1.header("Video original")
-                    col1.video(self.temp_file_to_save)
-                    col2.header("Video con emociones procesadas")
-                    col2.video("./testh264.mp4")
-                    self.extract_audio("./temp_file_1.mp4", "output_audio.wav")
+
+                    self.extract_audio("./temp_file_1.mp4", "./audio/output_audio.wav")
                     audio_filename = './output_audio.wav'
                     audio_file = open(audio_filename,'rb')
                     if audio_file is not None:
@@ -321,7 +322,7 @@ class EmotionRecognitionApp:
                         path = os.path.join("audio",audio_filename)
                             # extraer características
                             # mostrar el audio
-                        st.audio(audio_file, format='audio/wav', start_time=0)
+                        st.audio(path, format='audio/wav', start_time=0)
                         try:
                             wav, sr = librosa.load(path, sr=44100)
                             Xdb = self.get_melspec(path)[1]
