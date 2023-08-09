@@ -1,4 +1,5 @@
 import os
+import subprocess
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
@@ -8,6 +9,7 @@ import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
+from deepface import DeepFace
 from gradio_client import Client
 from PIL import Image
 import plotly.graph_objects as go
@@ -17,7 +19,7 @@ from wordcloud import WordCloud
 from pysentimiento import create_analyzer
 from annotated_text import annotated_text
 from src.audio.melspec import plot_colored_polar
-
+import mediapipe as mp
 
 
 @dataclass
@@ -195,6 +197,73 @@ class EmotionRecognitionApp:
         video_clip = VideoFileClip(video_path)
         audio_clip = video_clip.audio
         audio_clip.write_audiofile(output_audio_path)
+
+    def detect_emotion(self, face_image):
+        if face_image is None or face_image.size == 0:
+            return None
+        emotions_list = DeepFace.analyze(
+            face_image,
+            actions=['emotion'],
+            detector_backend="skip",
+            enforce_detection=False)
+        if not emotions_list:
+            return None
+        emotions = emotions_list[0]
+        emotion_label = emotions['dominant_emotion']
+        return emotion_label
+
+    def mediapipe_face_detection(self, image):
+        mp_face_detection = mp.solutions.face_detection.FaceDetection(min_detection_confidence=0.5)
+        results = mp_face_detection.process(image)
+
+        if results.detections:
+            ih, iw, _ = image.shape
+            for detection in results.detections:
+                bboxC = detection.location_data.relative_bounding_box
+                bbox = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
+                x, y, w, h = bbox
+                x = max(0, x)
+                y = max(0, y)
+                w = min(iw - x, w)
+                h = min(ih - y, h)
+                if w > 0 and h > 0:
+                    face_image = image[y:y + h, x:x + w]
+                    if not isinstance(face_image, np.ndarray) or face_image.shape[-1] != 3:
+                        face_image = cv2.cvtColor(face_image, cv2.COLOR_RGB2BGR)
+                    emotion_label = self.detect_emotion(face_image)
+                    current_timestamp = self.cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+                    if emotion_label is not None:
+                        cv2.putText(image, emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        return image
+
+    def process_video(self, video_data):
+        self.write_bytesio_to_file(self.temp_file_to_save, video_data)
+        self.cap = cv2.VideoCapture(self.temp_file_to_save)
+        width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        frame_fps = self.cap.get(cv2.CAP_PROP_FPS)
+        fourcc_mp4 = cv2.VideoWriter_fourcc(*'mp4v')
+        self.out_mp4 = cv2.VideoWriter(self.temp_file_result, fourcc_mp4, frame_fps, (width, height), isColor=False)
+
+        while True:
+            ret, frame = self.cap.read()
+            if not ret:
+                break
+            emotion_dominant = self.mediapipe_face_detection(frame)
+            emotion_label = self.detect_emotion(frame)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            current_timestamp = self.cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+            if emotion_label is not None:
+                self.emotions_list.append(emotion_label)
+                self.timestamps.append(current_timestamp)
+            self.out_mp4.write(gray)
+        self.cap.release()
+        self.out_mp4.release()
+
+    def convert_to_h264(self):
+        converted_video = "./testh264.mp4"
+        subprocess.call(args=f"ffmpeg -y -i {self.temp_file_result} -c:v libx264 {converted_video}".split(" "))
 
     def main(self):
         side_img = Image.open("images/3603909.png")
