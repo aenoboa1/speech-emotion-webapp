@@ -319,24 +319,20 @@ class EmotionRecognitionApp:
                         if not os.path.exists("audio"):
                             os.makedirs("audio")
                         path = os.path.join("audio",audio_filename)
-                        if_save_audio = self.save_audio(audio_file)
-                        if if_save_audio == 1:
-                            st.warning("El tamaño del archivo es demasiado grande. Intente con otro archivo.")
-                        elif if_save_audio == 0:
                             # extraer características
                             # mostrar el audio
-                            st.audio(audio_file, format='audio/wav', start_time=0)
-                            try:
-                                wav, sr = librosa.load(path, sr=44100)
-                                Xdb = self.get_melspec(path)[1]
-                                mfccs = librosa.feature.mfcc(wav, sr=sr)
-                                # # mostrar el audio
-                                # st.audio(audio_file, format='audio/wav', start_time=0)
-                            except Exception as e:
-                                audio_file = None
-                                st.error(f"Error {e} - formato incorrecto del archivo. Intente con otro archivo .wav.")
-                        else:
-                            st.error("Error desconocido")
+                        st.audio(audio_file, format='audio/wav', start_time=0)
+                        try:
+                            wav, sr = librosa.load(path, sr=44100)
+                            Xdb = self.get_melspec(path)[1]
+                            mfccs = librosa.feature.mfcc(wav, sr=sr)
+                            # # mostrar el audio
+                            # st.audio(audio_file, format='audio/wav', start_time=0)
+                        except Exception as e:
+                            audio_file = None
+                            st.error(f"Error {e} - formato incorrecto del archivo. Intente con otro archivo .wav.")
+                    else:
+                        st.error("Error desconocido")
 
                 else:
                     if st.button("Probar con archivo de prueba"):
