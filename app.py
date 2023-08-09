@@ -314,7 +314,7 @@ class EmotionRecognitionApp:
                     st.plotly_chart(fig_pie)
 
                     self.extract_audio("./temp_file_1.mp4", "./audio/output_audio.wav")
-                    audio_filename = './output_audio.wav'
+                    audio_filename = 'output_audio.wav'
                     audio_file = open("./audio"+audio_filename,'rb')
                     if audio_file is not None:
                         if not os.path.exists("audio"):
