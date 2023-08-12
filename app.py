@@ -478,10 +478,8 @@ class EmotionRecognitionApp:
                                     False,
                                     api_name="/predict"
                                 )
-                                # Split the data_string into filepaths and text_data
+                                # Extract the transcribed text
                                 text_data = result[2]
-
-                                # Skip the WEBVTT header and start processing from the first timestamp
                                 lines = text_data.split("\n")
                                 start_index = 0
                                 while start_index < len(lines):
@@ -489,37 +487,42 @@ class EmotionRecognitionApp:
                                         break
                                     start_index += 1
 
-                                # Extract the segments of transcribed text
-                                    segments = []
-                                    segment = []
-                                    for line in lines[start_index + 1:]:
-                                        if line.strip() == "":
-                                            # Skip empty lines
-                                            continue
-                                        if "-->" in line:
-                                            # Start of a new segment
-                                            segments.append(" ".join(segment))
-                                            segment = []
-                                        else:
-                                            # Add the line to the current segment
-                                            segment.append(line.strip())
-                                    if segment:
-                                        # Add the last segment if there's any content
-                                        segments.append(" ".join(segment))
-                                    
-                                    # Show the word cloud
-                                    st.subheader("Word Cloud")
-                                    self.create_word_cloud("\n".join(segments))
+                                # Show the word cloud
+                                st.subheader("Word Cloud")
+                                self.create_word_cloud("\n".join(lines[start_index + 1:]))
 
-                                    st.subheader("Emoción obtenida a partir de la transcripción de texto:")
-                                    for segment in segments:
-                                        st.markdown(segment)
-                                        st.divider()
-                                        if segment.strip():
-                                            emotion_result, probabilities = self.analyze_emotion(segment)
-                                            annotated_text((segment, emotion_result))
-                                            st.write(f"Análisis emocional: {emotion_result}\n")
-                                            st.plotly_chart(self.plot_emotion_probabilities(probabilities))
+                                segments = []
+                                current_segment = {'timestamp': None, 'lines': []}
+                                for line in lines[start_index + 1:]:
+                                    line = line.strip()
+                                    if not line:
+                                        # Skip empty lines
+                                        continue
+                                    if "-->" in line:
+                                        # Start of a new timestamp
+                                        if current_segment['timestamp'] and current_segment['lines']:
+                                            # Store the previous segment
+                                            segments.append(current_segment)
+                                        current_segment = {'timestamp': line, 'lines': []}
+                                    else:
+                                        # Add the line to the current segment
+                                        current_segment['lines'].append(line)
+                                if current_segment['timestamp'] and current_segment['lines']:
+                                    # Store the last segment
+                                    segments.append(current_segment)
+                            
+                                st.subheader("Emoción obtenida a partir de la transcripción de texto:")
+                                for segment in segments:
+                                    timestamp = segment['timestamp']
+                                    text = " ".join(segment['lines'])
+                                    st.markdown(timestamp)
+                                    st.divider()
+                                    if text.strip():
+                                        emotion_result, probabilities = self.analyze_emotion(text)
+                                        annotated_text((text, emotion_result))
+                                        st.write(f"Análisis emocional: {emotion_result}\n")
+                                        st.plotly_chart(self.plot_emotion_probabilities(probabilities))
+
 
 
 if __name__ == '__main__':
