@@ -465,7 +465,7 @@ class EmotionRecognitionApp:
                         if whisper:
                             with st.spinner('Procesando Transcripción'):
                                 result = self.client.predict(
-                                    "large",
+                                    "large-v2",
                                     "Spanish",
                                     "",
                                     [f"./audio/{audio_filename}"],
