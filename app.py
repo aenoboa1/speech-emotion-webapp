@@ -233,6 +233,8 @@ class EmotionRecognitionApp:
                     emotion_label = self.detect_emotion(face_image)
                     current_timestamp = self.cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
                     if emotion_label is not None:
+                        self.emotions_list.append(emotion_label)
+                        self.timestamps.append(current_timestamp)
                         cv2.putText(image, emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
         return image
@@ -253,10 +255,6 @@ class EmotionRecognitionApp:
             emotion_dominant = self.mediapipe_face_detection(frame)
             emotion_label = self.detect_emotion(frame)
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            current_timestamp = self.cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
-            if emotion_label is not None:
-                self.emotions_list.append(emotion_label)
-                self.timestamps.append(current_timestamp)
             self.out_mp4.write(gray)
         self.cap.release()
         self.out_mp4.release()
