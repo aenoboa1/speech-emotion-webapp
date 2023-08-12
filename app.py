@@ -489,12 +489,14 @@ class EmotionRecognitionApp:
                                         break
                                     start_index += 1
 
+                                print(lines)
+
                                 # Show the word cloud
                                 st.subheader("Word Cloud")
                                 self.create_word_cloud("\n".join(lines[start_index + 1:]))
 
                                 st.subheader("Emoción obtenida apartir de la transcripción de texto:")
-                                for i in range(start_index, len(lines), 3):
+                                for i in range(start_index, len(lines)):
                                     if i + 2 < len(
                                             lines):  # Check if there are enough lines to extract timestamp and text
 
