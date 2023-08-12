@@ -493,7 +493,7 @@ class EmotionRecognitionApp:
 
                                 segments = []
                                 current_segment = {'timestamp': None, 'lines': []}
-                                for line in lines[start_index + 1:]:
+                                for line in lines[start_index:]:
                                     line = line.strip()
                                     if not line:
                                         # Skip empty lines
