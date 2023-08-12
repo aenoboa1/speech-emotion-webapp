@@ -497,15 +497,15 @@ class EmotionRecognitionApp:
                                 for i in range(start_index, len(lines), 3):
                                     if i + 2 < len(
                                             lines):  # Check if there are enough lines to extract timestamp and text
+
                                         timestamp = lines[i].strip()
                                         text = lines[i + 1].strip()
                                         st.markdown(f"{timestamp}")
                                         st.divider()
-                                        if text is not " ":
-                                            emotion_result, probabilities = self.analyze_emotion(text)
-                                            annotated_text((text, emotion_result))
-                                            st.write(f"Análisis emocional: {emotion_result}\n")
-                                            st.plotly_chart(self.plot_emotion_probabilities(probabilities))
+                                        emotion_result, probabilities = self.analyze_emotion(text)
+                                        annotated_text((text, emotion_result))
+                                        st.write(f"Análisis emocional: {emotion_result}\n")
+                                        st.plotly_chart(self.plot_emotion_probabilities(probabilities))
 
 
 if __name__ == '__main__':
