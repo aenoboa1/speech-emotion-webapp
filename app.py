@@ -77,9 +77,23 @@ class EmotionRecognitionApp:
         emotion_result = self.analyzer.predict(text)
         emotion = emotion_result.output
         probabilities = emotion_result.probas
-        return emotion, probabilities
+
+        emotion_mapping = {
+            'others': 'neutral',
+            'joy': 'feliz',
+            'sadness': 'triste',
+            'fear': 'miedo',
+            'anger': 'enojado',
+            'surprise': 'sorpresa',
+            'disgust': 'asco'
+        }
+
+        spanish_emotion_label = emotion_mapping.get(emotion, 'unknown')
+  
+        return spanish_emotion_label, probabilities
 
     def plot_emotion_probabilities(self, probabilities):
+
         emotions_emoji_dict = {
             "anger": ("😠", "red"),
             "disgust": ("🤮", "purple"),
@@ -89,6 +103,7 @@ class EmotionRecognitionApp:
             "sadness": ("😔", "blue"),
             "surprise": ("😮", "cyan")
         }
+        
         emotions = list(probabilities.keys())
         probabilities = list(probabilities.values())
         fig = go.Figure(go.Bar(x=emotions, y=probabilities,
@@ -245,7 +260,7 @@ class EmotionRecognitionApp:
                     if emotion_label is not None:
                         self.emotions_list.append(spanish_emotion_label)
                         self.timestamps.append(current_timestamp)
-                        cv2.putText(image, emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        cv2.putText(image, spanish_emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
                         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
         return image
 
