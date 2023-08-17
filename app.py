@@ -110,8 +110,8 @@ class EmotionRecognitionApp:
                                marker=dict(color=[emotions_emoji_dict[emotion][1] for emotion in emotions])))
         fig.update_layout(
             xaxis=dict(tickangle=45),
-            yaxis=dict(title="Probability"),
-            title="Emotion Probabilities",
+            yaxis=dict(title="Probabilidad"),
+            title="Probabilidad de Emociones",
             showlegend=False
         )
         return fig
@@ -260,7 +260,7 @@ class EmotionRecognitionApp:
                     if emotion_label is not None:
                         self.emotions_list.append(spanish_emotion_label)
                         self.timestamps.append(current_timestamp)
-                        cv2.putText(image, spanish_emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+                        cv2.putText(image, spanish_emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 100, 0), 2)
                         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
         return image
 
@@ -321,16 +321,16 @@ class EmotionRecognitionApp:
                         go.Scatter(x=self.timestamps, y=self.emotions_list, mode='markers+lines', name='Emotions',
                                    line=dict(color='blue', width=2)))
                     fig.update_layout(
-                        title="Emotion Timeline",
-                        xaxis_title="Time (seconds)",
-                        yaxis_title="Emotion",
+                        title="Linea Temporal de Emociones",
+                        xaxis_title="Tiempo (segundos)",
+                        yaxis_title="Emoción",
                         template="plotly_white"
                     )
                     emotion_counts = dict(Counter(self.emotions_list))
                     fig_pie = go.Figure(
                         data=[go.Pie(labels=list(emotion_counts.keys()), values=list(emotion_counts.values()))])
                     fig_pie.update_layout(
-                        title="Emotion Summary",
+                        title="Resumen de emociones",
                         template="plotly_white"
                     )
                     st.plotly_chart(fig)
@@ -513,7 +513,7 @@ class EmotionRecognitionApp:
                                     start_index += 1
 
                                 # Show the word cloud
-                                st.subheader("Word Cloud")
+                                st.subheader("Nube de palabras")
                                 self.create_word_cloud("\n".join(lines[start_index + 1:]))
 
                                 segments = []
