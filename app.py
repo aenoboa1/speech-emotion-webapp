@@ -273,7 +273,7 @@ class EmotionRecognitionApp:
                     if emotion_label is not None:
                         self.emotions_list.append(spanish_emotion_label)
                         self.timestamps.append(current_timestamp)
-                        cv2.putText(image, spanish_emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 100, 0), 2)
+                        cv2.putText(image, spanish_emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
         return image
 
