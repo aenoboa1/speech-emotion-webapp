@@ -116,10 +116,12 @@ class EmotionRecognitionApp:
         
         emotions = list(probabilities.keys())
 
+ 
+
         spanish_emotion_labels = [emotion_mapping.get(emotion, 'unknown') for emotion in emotions]  # Fix this line
 
         probabilities = list(probabilities.values())
-        fig = go.Figure(go.Bar(x=spanish_emotion_label, y=probabilities,
+        fig = go.Figure(go.Bar(x=spanish_emotion_labels, y=probabilities,
                                marker=dict(color=[emotions_emoji_dict[emotion][1] for emotion in emotions])))
         fig.update_layout(
             xaxis=dict(tickangle=45),
