@@ -32,7 +32,7 @@ class EmotionRecognitionApp:
         # Initialize necessary components
         self.analyzer = create_analyzer(task="emotion", lang="es")
         self.model = load_model("model3.h5")
-        self.client = Client("https://96cacb86e2f289a78e.gradio.live")
+        self.client = Client("https://13004b758b2e4105e7.gradio.live")
         self.starttime = datetime.now()
         self.CAT6 = ['miedo', 'enojo', 'neutral', 'feliz', 'triste', 'sorpresa']
         self.CAT7 = ['miedo', 'asco', 'neutral', 'feliz', 'triste', 'sorpresa', 'enojo']
@@ -215,7 +215,16 @@ class EmotionRecognitionApp:
     def mediapipe_face_detection(self, image):
         mp_face_detection = mp.solutions.face_detection.FaceDetection(min_detection_confidence=0.5)
         results = mp_face_detection.process(image)
-
+        # Mapping English emotion labels to Spanish
+        emotion_mapping = {
+            'neutral': 'neutral',
+            'happy': 'feliz',
+            'sad': 'triste',
+            'fear': 'miedo',
+            'angry': 'enojado',
+            'surprise': 'sorpresa',
+            'disgust': 'asco'
+        }
         if results.detections:
             ih, iw, _ = image.shape
             for detection in results.detections:
@@ -232,8 +241,9 @@ class EmotionRecognitionApp:
                         face_image = cv2.cvtColor(face_image, cv2.COLOR_RGB2BGR)
                     emotion_label = self.detect_emotion(face_image)
                     current_timestamp = self.cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+                    spanish_emotion_label = emotion_mapping.get(emotion_label, 'unknown')
                     if emotion_label is not None:
-                        self.emotions_list.append(emotion_label)
+                        self.emotions_list.append(spanish_emotion_label)
                         self.timestamps.append(current_timestamp)
                         cv2.putText(image, emotion_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
