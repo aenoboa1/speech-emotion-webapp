@@ -32,7 +32,7 @@ class EmotionRecognitionApp:
         # Initialize necessary components
         self.analyzer = create_analyzer(task="emotion", lang="es")
         self.model = load_model("model3.h5")
-        self.client = Client("https://13004b758b2e4105e7.gradio.live")
+        self.client = Client("https://f279427e2df8d22f10.gradio.live")
         self.starttime = datetime.now()
         self.CAT6 = ['miedo', 'enojo', 'neutral', 'feliz', 'triste', 'sorpresa']
         self.CAT7 = ['miedo', 'asco', 'neutral', 'feliz', 'triste', 'sorpresa', 'enojo']
