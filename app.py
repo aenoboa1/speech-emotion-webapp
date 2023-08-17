@@ -116,7 +116,7 @@ class EmotionRecognitionApp:
         
         emotions = list(probabilities.keys())
 
-        spanish_emotion_label = emotion_mapping.get(emotion, 'unknown')
+        spanish_emotion_label = emotion_mapping.get(emotions, 'unknown')
 
         probabilities = list(probabilities.values())
         fig = go.Figure(go.Bar(x=spanish_emotion_label, y=probabilities,
