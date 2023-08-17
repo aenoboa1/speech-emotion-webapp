@@ -103,10 +103,23 @@ class EmotionRecognitionApp:
             "sadness": ("😔", "blue"),
             "surprise": ("😮", "cyan")
         }
+
+        emotion_mapping = {
+            'others': 'neutral',
+            'joy': 'feliz',
+            'sadness': 'triste',
+            'fear': 'miedo',
+            'anger': 'enojado',
+            'surprise': 'sorpresa',
+            'disgust': 'asco'
+        }
         
         emotions = list(probabilities.keys())
+
+        spanish_emotion_label = emotion_mapping.get(emotion, 'unknown')
+
         probabilities = list(probabilities.values())
-        fig = go.Figure(go.Bar(x=emotions, y=probabilities,
+        fig = go.Figure(go.Bar(x=spanish_emotion_label, y=probabilities,
                                marker=dict(color=[emotions_emoji_dict[emotion][1] for emotion in emotions])))
         fig.update_layout(
             xaxis=dict(tickangle=45),
